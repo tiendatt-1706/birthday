@@ -62,7 +62,7 @@
         })();
     </script>
     <title>Happy birthday</title>
-    <link rel="stylesheet" href="style.css?v=video-inline-5">
+    <link rel="stylesheet" href="style.css?v=confirm-play-8">
     <link rel="stylesheet" href="letter.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
@@ -164,6 +164,7 @@
 
                         <!-- Video phát từ 0s khi toàn bộ giao diện đã xuất hiện xong -->
                         <video id="birthdayVideo" src="./images/capcut1.mp4" poster="./images/sinhnhat2.jpg" muted playsinline webkit-playsinline controlslist="nofullscreen noremoteplayback" disablepictureinpicture disableremoteplayback preload="auto"></video>
+                        <img id="birthdayZaloVideo" class="video__animation" data-src="./images/capcut1-inline.webp" data-duration-ms="21250" alt="" aria-hidden="true">
 
                         <!-- Slideshow ảnh: bắt đầu chiếu sau khi video kết thúc -->
                         <img class="slide" src="./images/sinhnhat2.jpg" alt="">
@@ -483,6 +484,7 @@
     // Ảnh đầu -> giao diện xuất hiện đủ -> video -> nút mở thư và slideshow.
     (function() {
         const videoEl = document.getElementById('birthdayVideo');
+        const imageVideoEl = document.getElementById('birthdayZaloVideo');
         const content = document.querySelector('.content');
         const wrapper = document.getElementById('wrapper');
         const waitingText = document.querySelector('.waiting__text');
@@ -493,6 +495,10 @@
         let videoFinished = false;
         let playPending = false;
         let slideshowStarted = false;
+        let useImageVideo = /Zalo/i.test(navigator.userAgent);
+        let imageVideoLoading = false;
+        let imageVideoStarted = false;
+        let imageVideoTimer = null;
 
         function configureInlineVideo() {
             if (!videoEl) return;
@@ -508,6 +514,17 @@
 
         function keepVideoInFrame(event) {
             if (!videoEl) return;
+            const enteredFullscreen = videoEl.webkitDisplayingFullscreen
+                || (videoEl.webkitPresentationMode && videoEl.webkitPresentationMode !== 'inline')
+                || event?.type === 'webkitbeginfullscreen'
+                || document.fullscreenElement === videoEl || document.webkitFullscreenElement === videoEl;
+            if (enteredFullscreen && imageVideoEl && !videoFinished) {
+                // Some in-app browsers omit their name from the user agent.
+                useImageVideo = true;
+                videoEl.pause();
+                videoEl.classList.remove('playing');
+                if (introReady) playImageVideo();
+            }
             if (videoEl.webkitPresentationMode && videoEl.webkitPresentationMode !== 'inline'
                 && typeof videoEl.webkitSetPresentationMode === 'function') {
                 try { videoEl.webkitSetPresentationMode('inline'); } catch {}
@@ -534,6 +551,12 @@
             videoEl.pause();
             videoEl.currentTime = 0;
             videoEl.classList.remove('playing');
+            if (useImageVideo) {
+                // Zalo must not invoke its native video player, even for preload.
+                videoEl.preload = 'none';
+                videoEl.removeAttribute('src');
+                videoEl.load();
+            }
         }
         if (waitingText) waitingText.classList.remove('show');
         if (letterBtn) letterBtn.classList.remove('active');
@@ -567,9 +590,12 @@
             }, 3000);
         }
 
-        function finishVideo() {
+        function finishVideo(event) {
+            if (useImageVideo && event?.type === 'ended') return;
             if (!introReady || videoFinished) return;
             videoFinished = true;
+            clearTimeout(imageVideoTimer);
+            if (imageVideoEl) imageVideoEl.classList.remove('playing');
             if (videoEl) {
                 videoEl.classList.remove('playing');
                 videoEl.pause();
@@ -585,6 +611,32 @@
             });
         }
 
+        function showVideoWaiting() {
+            if (waitingText) {
+                waitingText.classList.remove('hide');
+                waitingText.classList.add('show');
+            }
+        }
+
+        function playImageVideo() {
+            if (!introReady || videoFinished || imageVideoLoading || imageVideoStarted || !imageVideoEl) return;
+            imageVideoLoading = true;
+            imageVideoEl.onload = function() {
+                imageVideoLoading = false;
+                if (videoFinished) return;
+                imageVideoStarted = true;
+                imageVideoEl.classList.add('playing');
+                showVideoWaiting();
+                // The generated WebP plays once; use its encoded frame duration.
+                imageVideoTimer = setTimeout(finishVideo, Number(imageVideoEl.dataset.durationMs));
+            };
+            imageVideoEl.onerror = function() {
+                imageVideoLoading = false;
+            };
+            // Assign only after the entrance, so the animation begins at frame one.
+            imageVideoEl.src = imageVideoEl.dataset.src;
+        }
+
         function onVideoPlaying() {
             if (!introReady) {
                 videoEl.pause();
@@ -593,14 +645,19 @@
             }
             if (videoFinished) return;
             keepVideoInFrame();
-            videoEl.classList.add('playing');
-            if (waitingText) {
-                waitingText.classList.remove('hide');
-                waitingText.classList.add('show');
+            if (useImageVideo) {
+                videoEl.pause();
+                return;
             }
+            videoEl.classList.add('playing');
+            showVideoWaiting();
         }
 
         function tryPlayVideo() {
+            if (useImageVideo) {
+                playImageVideo();
+                return;
+            }
             if (!videoEl || videoFinished || playPending) return;
             playPending = true;
             configureInlineVideo();
@@ -627,16 +684,14 @@
         }
 
         function resumeVideo() {
-            if (introReady && !videoFinished && videoEl && videoEl.paused
-                && document.visibilityState !== 'hidden') {
-                tryPlayVideo();
-            }
+            if (!introReady || videoFinished || document.visibilityState === 'hidden') return;
+            if (useImageVideo || (videoEl && videoEl.paused)) tryPlayVideo();
         }
 
         function startPresentation() {
             if (introReady) return;
             introReady = true;
-            if (videoEl) tryPlayVideo();
+            if (videoEl || imageVideoEl) tryPlayVideo();
             else finishVideo();
         }
 
@@ -644,8 +699,10 @@
             if (introScheduled || !content || window.getComputedStyle(content).display === 'none') return;
             introScheduled = true;
 
-            // The circle must finish its entrance before any video playback begins.
             configureInlineVideo();
+            // Prepare native playback in the confirmation gesture, then hold at frame zero.
+            // Zalo uses the animated copy and never calls the native video player.
+            if (!useImageVideo) tryPlayVideo();
 
             if (wrapper && typeof wrapper.getAnimations === 'function') {
                 const entranceAnimations = wrapper.getAnimations({ subtree: true }).filter(function(animation) {

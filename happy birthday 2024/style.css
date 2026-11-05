@@ -311,7 +311,8 @@ body {
     align-items: center;
     border: 6px solid var(--color-black);
 }
-.content .right .image video{
+.content .right .image video,
+.content .right .image img.video__animation{
     display: block;
     position: absolute;
     top: 0;
@@ -329,7 +330,8 @@ body {
     transition: opacity 0.8s ease-in-out;
     z-index: 2;
 }
-.content .right .image video.playing{
+.content .right .image video.playing,
+.content .right .image img.video__animation.playing{
     opacity: 1;
 }
 .content .right .image img.avatar-poster{
