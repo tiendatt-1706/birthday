@@ -62,7 +62,7 @@
         })();
     </script>
     <title>Happy birthday</title>
-    <link rel="stylesheet" href="style.css?v=mobile-fit-2">
+    <link rel="stylesheet" href="style.css?v=video-sequence-4">
     <link rel="stylesheet" href="letter.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
@@ -113,7 +113,7 @@
 
                 <div class="waiting__text">
                     <i class="fa-solid fa-hourglass-half"></i>
-                    <span>Chờ xíu nhé...</span>
+                    <span>Chờ chút nhé...</span>
                 </div>
 
 
@@ -163,7 +163,7 @@
                         <img class="avatar-poster" src="./images/sinhnhat2.jpg" alt="">
 
                         <!-- Video phát từ 0s khi toàn bộ giao diện đã xuất hiện xong -->
-                        <video id="birthdayVideo" src="./images/capcut1.mp4" muted playsinline preload="auto"></video>
+                        <video id="birthdayVideo" src="./images/capcut1.mp4" poster="./images/sinhnhat2.jpg" muted playsinline webkit-playsinline preload="auto"></video>
 
                         <!-- Slideshow ảnh: bắt đầu chiếu sau khi video kết thúc -->
                         <img class="slide" src="./images/sinhnhat2.jpg" alt="">
@@ -480,64 +480,52 @@
 
 </script>
 <script>
-    // Hết video: hiện nút mở thư ngay, đồng thời tiếp tục slideshow ảnh.
+    // Ảnh đầu -> giao diện xuất hiện đủ -> video -> nút mở thư và slideshow.
     (function() {
         const videoEl = document.getElementById('birthdayVideo');
+        const content = document.querySelector('.content');
+        const wrapper = document.getElementById('wrapper');
+        const waitingText = document.querySelector('.waiting__text');
+        const letterBtn = document.querySelector('.left .btn');
+        const interactionEvents = ['click', 'touchend', 'keydown'];
+        let introScheduled = false;
+        let introReady = false;
+        let videoFinished = false;
+        let playPending = false;
+        let slideshowStarted = false;
+
         if (videoEl) {
+            videoEl.muted = true;
+            videoEl.defaultMuted = true;
+            videoEl.playsInline = true;
             videoEl.pause();
             videoEl.currentTime = 0;
+            videoEl.classList.remove('playing');
         }
+        if (waitingText) waitingText.classList.remove('show');
+        if (letterBtn) letterBtn.classList.remove('active');
 
         const allSlides = Array.from(document.querySelectorAll('.image .slide'));
-        allSlides.forEach((img) => {
-            img.onerror = function() {
-                this.remove();
-            };
+        allSlides.forEach(function(img) {
+            img.onerror = function() { this.remove(); };
             img.classList.remove('active');
         });
 
-        let presentationStarted = false;
-        let letterButtonShown = false;
-
-        function showLetterButton() {
-            if (letterButtonShown) return;
-            letterButtonShown = true;
-
-            const waitingText = document.querySelector('.waiting__text');
-            const letterBtn = document.querySelector('.left .btn');
-
-            // Ẩn dòng "Chờ xíu nhé"
-            if (waitingText) {
-                waitingText.classList.remove('show');
-                waitingText.classList.add('hide');
-            }
-
-            // Hiện nút "Có điều bất ngờ đang chờ đón bạn"
-            if (letterBtn) {
-                letterBtn.classList.add('active');
-            }
-        }
-
         function startPhotoSlideshow() {
+            if (slideshowStarted) return;
+            slideshowStarted = true;
             const validSlides = Array.from(document.querySelectorAll('.image .slide'));
-            if (validSlides.length === 0) return;
-
-            // Bật ảnh đầu tiên của slide
+            if (!validSlides.length) return;
             let activeSlide = validSlides[0];
-            validSlides.forEach((img, idx) => {
-                if (idx === 0) img.classList.add('active');
-                else img.classList.remove('active');
-            });
-
+            activeSlide.classList.add('active');
             if (validSlides.length === 1) return;
 
             const slideInterval = setInterval(function() {
                 const slides = Array.from(document.querySelectorAll('.image .slide'));
-                if (slides.length === 0) {
+                if (!slides.length) {
                     clearInterval(slideInterval);
                     return;
                 }
-
                 const nextIndex = (slides.indexOf(activeSlide) + 1) % slides.length;
                 activeSlide.classList.remove('active');
                 activeSlide = slides[nextIndex];
@@ -546,91 +534,117 @@
             }, 3000);
         }
 
-        function startPresentation() {
-            if (presentationStarted) return;
-            presentationStarted = true;
+        function finishVideo() {
+            if (!introReady || videoFinished) return;
+            videoFinished = true;
+            if (videoEl) {
+                videoEl.classList.remove('playing');
+                videoEl.pause();
+            }
+            if (waitingText) {
+                waitingText.classList.remove('show');
+                waitingText.classList.add('hide');
+            }
+            if (letterBtn) letterBtn.classList.add('active');
+            startPhotoSlideshow();
+            interactionEvents.forEach(function(eventName) {
+                document.removeEventListener(eventName, resumeVideo, true);
+            });
+        }
 
-            const waitingText = document.querySelector('.waiting__text');
-
-            // 1. Hiển thị dòng chữ "Chờ xíu nhé..."
+        function onVideoPlaying() {
+            if (!introReady) {
+                // Prepare playback in the existing name-confirmation gesture.
+                // Keep the first photo visible until the entrance effects finish.
+                videoEl.pause();
+                videoEl.currentTime = 0;
+                return;
+            }
+            if (videoFinished) return;
+            videoEl.classList.add('playing');
             if (waitingText) {
                 waitingText.classList.remove('hide');
                 waitingText.classList.add('show');
             }
+        }
 
-            // 2. BƯỚC 1: PHÁT HẾT VIDEO TỪ 0:00 TRƯỚC
-            if (videoEl) {
-                videoEl.currentTime = 0;
-                videoEl.classList.add('playing');
-                let videoEndedHandled = false;
-                function onVideoEnd() {
-                    if (videoEndedHandled) return;
-                    videoEndedHandled = true;
-                    videoEl.removeEventListener('ended', onVideoEnd);
-                    videoEl.removeEventListener('error', onVideoEnd);
-
-                    // Ẩn video mượt mà và tạm dừng
-                    videoEl.classList.remove('playing');
-                    videoEl.pause();
-
-                    // Người xem có thể mở thư ngay hoặc tiếp tục xem ảnh.
-                    showLetterButton();
-                    startPhotoSlideshow();
+        function tryPlayVideo() {
+            if (!videoEl || videoFinished || playPending) return;
+            playPending = true;
+            videoEl.muted = true;
+            try {
+                if (videoEl.error) videoEl.load();
+                const request = videoEl.play();
+                if (request && typeof request.then === 'function') {
+                    request.then(function() {
+                        playPending = false;
+                        if (!introReady) {
+                            videoEl.pause();
+                            videoEl.currentTime = 0;
+                        }
+                    }, function() {
+                        // Never skip the video or reveal the letter on a play rejection.
+                        playPending = false;
+                    });
+                } else {
+                    playPending = false;
                 }
-
-                videoEl.addEventListener('ended', onVideoEnd);
-                videoEl.addEventListener('error', onVideoEnd);
-                if (videoEl.error) {
-                    onVideoEnd();
-                    return;
-                }
-                const playPromise = videoEl.play();
-                if (playPromise !== undefined) playPromise.catch(onVideoEnd);
-
-                return;
+            } catch {
+                playPending = false;
             }
-
-            // Nếu không có video thì chạy thẳng vào slideshow ảnh
-            showLetterButton();
-            startPhotoSlideshow();
         }
 
-        // Lắng nghe khi toàn bộ hiệu ứng giao diện đã xuất hiện xong
-        // 1. Trên desktop: dòng ngày sinh hoàn thành animation
-        const dateOfBirthEl = document.querySelector('.date__of__birth');
-        if (dateOfBirthEl) {
-            dateOfBirthEl.addEventListener('animationend', function() {
-                startPresentation();
+        function resumeVideo() {
+            if (introReady && !videoFinished && videoEl && videoEl.paused
+                && document.visibilityState !== 'hidden') {
+                tryPlayVideo();
+            }
+        }
+
+        function startPresentation() {
+            if (introReady) return;
+            introReady = true;
+            if (videoEl) tryPlayVideo();
+            else finishVideo();
+        }
+
+        function schedulePresentation() {
+            if (introScheduled || !content || window.getComputedStyle(content).display === 'none') return;
+            introScheduled = true;
+
+            // Use the existing confirmation tap to prepare muted inline video on iPhone.
+            // This never displays the video before the entrance effects are complete.
+            tryPlayVideo();
+
+            if (wrapper && typeof wrapper.getAnimations === 'function') {
+                const entranceAnimations = wrapper.getAnimations({ subtree: true }).filter(function(animation) {
+                    return animation.effect && animation.playState !== 'finished'
+                        && animation.playState !== 'idle'
+                        && Number.isFinite(animation.effect.getComputedTiming().endTime);
+                });
+                Promise.all(entranceAnimations.map(function(animation) {
+                    return animation.finished.catch(function() {});
+                })).then(startPresentation);
+            } else {
+                // Fallback for browsers without the animation API; includes the final decorations.
+                setTimeout(startPresentation, window.innerWidth < 768 ? 9000 : 19000);
+            }
+        }
+
+        if (videoEl) {
+            videoEl.addEventListener('playing', onVideoPlaying);
+            videoEl.addEventListener('ended', finishVideo);
+            videoEl.addEventListener('loadeddata', resumeVideo);
+            videoEl.addEventListener('canplay', resumeVideo);
+            interactionEvents.forEach(function(eventName) {
+                document.addEventListener(eventName, resumeVideo, { capture: true, passive: true });
             });
-        }
-
-        // 2. Trên mobile: tên BaoNgoc hoàn thành animation scaleHeartLetter (khoảng 7s)
-        const nameEl = document.querySelector('.right .box__account .name');
-        if (nameEl) {
-            nameEl.addEventListener('animationend', function() {
-                if (window.innerWidth < 768) {
-                    startPresentation();
-                }
-            });
-        }
-
-        // 3. Fallback hẹn giờ theo độ trễ xuất hiện của màn hình (mobile: ~7.5s, desktop: ~14.5s)
-        function triggerFallbackTimer() {
-            const delay = (window.innerWidth < 768) ? 7500 : 14500;
-            setTimeout(startPresentation, delay);
+            document.addEventListener('visibilitychange', resumeVideo);
         }
 
         const submitBtn = document.getElementById('submitName');
-        if (submitBtn) {
-            submitBtn.addEventListener('click', function() {
-                setTimeout(triggerFallbackTimer, 100);
-            });
-        }
-
-        const content = document.querySelector('.content');
-        if (content && window.getComputedStyle(content).display !== 'none') {
-            triggerFallbackTimer();
-        }
+        if (submitBtn) submitBtn.addEventListener('click', schedulePresentation);
+        if (content && window.getComputedStyle(content).display !== 'none') schedulePresentation();
     })();
 </script>
 </body>
