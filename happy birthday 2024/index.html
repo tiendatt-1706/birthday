@@ -62,7 +62,7 @@
         })();
     </script>
     <title>Happy birthday</title>
-    <link rel="stylesheet" href="style.css?v=confirm-play-8">
+    <link rel="stylesheet" href="style.css?v=zalo-smooth-9">
     <link rel="stylesheet" href="letter.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
@@ -160,22 +160,22 @@
                 <div class="box__account">
                     <div class="image">
                         <!-- Ảnh đại diện hiển thị ban đầu khi hiệu ứng đang bay ra -->
-                        <img class="avatar-poster" src="./images/sinhnhat2.jpg" alt="">
+                        <img class="avatar-poster" src="./images/sinhnhat2-circle.webp" alt="">
 
                         <!-- Video phát từ 0s khi toàn bộ giao diện đã xuất hiện xong -->
-                        <video id="birthdayVideo" src="./images/capcut1.mp4" poster="./images/sinhnhat2.jpg" muted playsinline webkit-playsinline controlslist="nofullscreen noremoteplayback" disablepictureinpicture disableremoteplayback preload="auto"></video>
-                        <img id="birthdayZaloVideo" class="video__animation" data-src="./images/capcut1-inline.webp" data-duration-ms="21250" alt="" aria-hidden="true">
+                        <video id="birthdayVideo" src="./images/capcut1.mp4" poster="./images/sinhnhat2-circle.webp" muted playsinline webkit-playsinline controlslist="nofullscreen noremoteplayback" disablepictureinpicture disableremoteplayback preload="auto"></video>
+                        <img id="birthdayZaloVideo" class="video__animation" data-src="./images/capcut1-inline.webp?v=2" data-duration-ms="21233" alt="" aria-hidden="true">
 
                         <!-- Slideshow ảnh: bắt đầu chiếu sau khi video kết thúc -->
-                        <img class="slide" src="./images/sinhnhat2.jpg" alt="">
-                        <img class="slide" src="./images/sinhnhat.jpg" alt="">
+                        <img class="slide" src="./images/sinhnhat2-circle.webp" alt="">
+                        <img class="slide" src="./images/sinhnhat-circle.webp" alt="">
                         <!-- <img class="slide" src="./images/sinhnhat3.jpg" alt=""> -->
-                        <img class="slide" src="./images/sinhnhat4.jpg" alt="">
+                        <img class="slide" src="./images/sinhnhat4-circle.webp" alt="">
                         <!-- <img class="slide" src="./images/sinhnhat5.jpg" alt=""> -->
-                        <img class="slide" src="./images/sinhnhat6.jpg" alt="">
-                        <img class="slide" src="./images/sinhnhat7.jpg" alt="">
+                        <img class="slide" src="./images/sinhnhat6-circle.webp" alt="">
+                        <img class="slide" src="./images/sinhnhat7-circle.webp" alt="">
                         <!-- <img class="slide" src="./images/sinhnhat8.jpg" alt=""> -->
-                        <img class="slide" src="./images/sinhnhat9.jpg" alt="">
+                        <img class="slide" src="./images/sinhnhat9-circle.webp" alt="">
                         <!-- <img class="slide" src="./images/sinhnhat10.jpg" alt=""> -->
                     </div>
                     <div class="name">
@@ -456,6 +456,7 @@
 
 <script>
     document.addEventListener('mousemove', function(e){
+        if (document.body.classList.contains('zalo-video-playing')) return;
         let body = document.querySelector('body');
         let heart = document.createElement('span');
         let x = e.offsetX;
@@ -499,6 +500,30 @@
         let imageVideoLoading = false;
         let imageVideoStarted = false;
         let imageVideoTimer = null;
+        let imageVideoData = null;
+        let imageVideoObjectUrl = null;
+
+        function preloadImageVideo() {
+            if (!imageVideoEl || typeof fetch !== 'function') return Promise.resolve(null);
+            if (!imageVideoData) {
+                imageVideoData = fetch(imageVideoEl.dataset.src, { cache: 'force-cache' })
+                    .then(function(response) {
+                        if (!response.ok) throw new Error('Animation could not be loaded');
+                        return response.blob();
+                    }).catch(function() {
+                        imageVideoData = null;
+                        return null;
+                    });
+            }
+            return imageVideoData;
+        }
+
+        function releaseImageVideoUrl() {
+            if (imageVideoObjectUrl) {
+                URL.revokeObjectURL(imageVideoObjectUrl);
+                imageVideoObjectUrl = null;
+            }
+        }
 
         function configureInlineVideo() {
             if (!videoEl) return;
@@ -595,6 +620,8 @@
             if (!introReady || videoFinished) return;
             videoFinished = true;
             clearTimeout(imageVideoTimer);
+            document.body.classList.remove('zalo-video-playing');
+            releaseImageVideoUrl();
             if (imageVideoEl) imageVideoEl.classList.remove('playing');
             if (videoEl) {
                 videoEl.classList.remove('playing');
@@ -625,6 +652,7 @@
                 imageVideoLoading = false;
                 if (videoFinished) return;
                 imageVideoStarted = true;
+                document.body.classList.add('zalo-video-playing');
                 imageVideoEl.classList.add('playing');
                 showVideoWaiting();
                 // The generated WebP plays once; use its encoded frame duration.
@@ -632,9 +660,18 @@
             };
             imageVideoEl.onerror = function() {
                 imageVideoLoading = false;
+                releaseImageVideoUrl();
             };
-            // Assign only after the entrance, so the animation begins at frame one.
-            imageVideoEl.src = imageVideoEl.dataset.src;
+            // Preload bytes only, then attach a fresh image at frame one when ready.
+            preloadImageVideo().then(function(blob) {
+                if (videoFinished) return;
+                if (blob && typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
+                    imageVideoObjectUrl = URL.createObjectURL(blob);
+                    imageVideoEl.src = imageVideoObjectUrl;
+                } else {
+                    imageVideoEl.src = imageVideoEl.dataset.src;
+                }
+            });
         }
 
         function onVideoPlaying() {
@@ -705,17 +742,36 @@
             if (!useImageVideo) tryPlayVideo();
 
             if (wrapper && typeof wrapper.getAnimations === 'function') {
-                const entranceAnimations = wrapper.getAnimations({ subtree: true }).filter(function(animation) {
-                    return animation.effect && animation.playState !== 'finished'
-                        && animation.playState !== 'idle'
-                        && Number.isFinite(animation.effect.getComputedTiming().endTime);
+                const delays = wrapper.getAnimations({ subtree: true }).map(function(animation) {
+                    if (!animation.effect || animation.playState === 'finished' || animation.playState === 'idle') return 0;
+                    const timing = animation.effect.getComputedTiming();
+                    if (!Number.isFinite(timing.endTime)) return 0;
+                    let visibleEnd = timing.endTime;
+                    if (timing.iterations === 1 && Number.isFinite(timing.duration)
+                        && typeof animation.effect.getKeyframes === 'function') {
+                        const frames = animation.effect.getKeyframes();
+                        const last = frames[frames.length - 1];
+                        if (last) {
+                            const properties = Object.keys(last).filter(function(key) {
+                                return !['offset', 'computedOffset', 'easing', 'composite'].includes(key);
+                            });
+                            let finalFrame = frames.length - 1;
+                            // Ignore the hold after an entrance has reached its final appearance.
+                            while (finalFrame > 0 && properties.every(function(key) {
+                                return frames[finalFrame - 1][key] === last[key];
+                            })) finalFrame--;
+                            const offset = frames[finalFrame].computedOffset;
+                            if (Number.isFinite(offset)) visibleEnd = timing.delay + timing.duration * offset;
+                        }
+                    }
+                    return Math.max(0, visibleEnd - (Number(animation.currentTime) || 0))
+                        / (Math.abs(animation.playbackRate) || 1);
                 });
-                Promise.all(entranceAnimations.map(function(animation) {
-                    return animation.finished.catch(function() {});
-                })).then(startPresentation);
+                const delay = Math.ceil(Math.max(0, ...delays));
+                if (delay > 0) setTimeout(startPresentation, delay);
+                else startPresentation();
             } else {
-                // Fallback for browsers without the animation API; includes the final decorations.
-                setTimeout(startPresentation, window.innerWidth < 768 ? 9000 : 19000);
+                setTimeout(startPresentation, window.innerWidth < 768 ? 7000 : 17000);
             }
         }
 
@@ -735,6 +791,7 @@
         }
 
         const submitBtn = document.getElementById('submitName');
+        if (useImageVideo) preloadImageVideo();
         if (submitBtn) submitBtn.addEventListener('click', schedulePresentation);
         if (content && window.getComputedStyle(content).display !== 'none') schedulePresentation();
     })();

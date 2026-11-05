@@ -334,6 +334,21 @@ body {
 .content .right .image img.video__animation.playing{
     opacity: 1;
 }
+
+/* Keep decoding and compositing light while the Zalo animation is playing. */
+body.zalo-video-playing .waiting__text,
+body.zalo-video-playing .text__cricle,
+body.zalo-video-playing .fa-heart,
+body.zalo-video-playing .decorate_star,
+body.zalo-video-playing .balloon_one,
+body.zalo-video-playing .balloon_two{
+    animation-play-state: paused !important;
+}
+body.zalo-video-playing .content .right .image img.video__animation{
+    clip-path: none;
+    border-radius: 0;
+    transition: none;
+}
 .content .right .image img.avatar-poster{
     position: absolute;
     top: 0;
