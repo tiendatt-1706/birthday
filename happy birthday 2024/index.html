@@ -3,6 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* Apply before external CSS loads, including when an older stylesheet is cached. */
+        #nameModal #nameInput {
+            font-size: 16px !important;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+    </style>
+    <script>
+        (() => {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+                || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            const viewport = document.querySelector('meta[name="viewport"]');
+            if (!isIOS || !viewport) return;
+
+            let savedViewport = null;
+            let restoreTimer = null;
+
+            function restoreViewport() {
+                clearTimeout(restoreTimer);
+                restoreTimer = null;
+                if (savedViewport === null) return;
+                viewport.setAttribute('content', savedViewport);
+                savedViewport = null;
+            }
+
+            function prepareNameInput(event) {
+                if (event.target.id !== 'nameInput') return;
+                clearTimeout(restoreTimer);
+                restoreTimer = null;
+                if (savedViewport !== null) return;
+
+                savedViewport = viewport.getAttribute('content');
+                // Preserve any intentional zoom; suppress only the extra focus zoom.
+                const scale = Math.max(1, window.visualViewport?.scale || 1);
+                const settings = savedViewport.split(',').map(value => value.trim())
+                    .filter(value => !/^maximum-scale\s*=/i.test(value));
+                settings.push('maximum-scale=' + scale);
+                viewport.setAttribute('content', settings.join(', '));
+            }
+
+            // Touch/pointer events run before Safari focuses the input.
+            document.addEventListener('pointerdown', prepareNameInput, { capture: true, passive: true });
+            document.addEventListener('touchstart', prepareNameInput, { capture: true, passive: true });
+            document.addEventListener('focusin', prepareNameInput);
+            function scheduleViewportRestore(event) {
+                if (event.target.id !== 'nameInput' || savedViewport === null) return;
+                clearTimeout(restoreTimer);
+                restoreTimer = setTimeout(function() {
+                    if (document.activeElement?.id !== 'nameInput') restoreViewport();
+                }, 300);
+            }
+            ['focusout', 'pointerup', 'touchend', 'pointercancel', 'touchcancel'].forEach(function(eventName) {
+                document.addEventListener(eventName, scheduleViewportRestore, { passive: true });
+            });
+            window.addEventListener('pagehide', restoreViewport);
+        })();
+    </script>
     <title>Happy birthday</title>
     <link rel="stylesheet" href="style.css?v=mobile-fit-2">
     <link rel="stylesheet" href="letter.css">

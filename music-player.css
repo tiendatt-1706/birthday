@@ -30,9 +30,3 @@
     outline-offset: 3px;
 }
 
-@media (max-width: 480px) {
-    #music-listen {
-        bottom: 300px;
-        bottom: calc(300px + env(safe-area-inset-bottom, 0px));
-    }
-}
