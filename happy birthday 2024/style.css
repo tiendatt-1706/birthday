@@ -1001,6 +1001,7 @@ body {
 
 .modal-content input {
     width: 80%;
+    font-size: 16px;
     padding: 10px;
     margin: 10px 0;
     border: 1px solid #ccc;
