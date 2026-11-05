@@ -62,7 +62,7 @@
         })();
     </script>
     <title>Happy birthday</title>
-    <link rel="stylesheet" href="style.css?v=video-sequence-4">
+    <link rel="stylesheet" href="style.css?v=video-inline-5">
     <link rel="stylesheet" href="letter.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
@@ -163,7 +163,7 @@
                         <img class="avatar-poster" src="./images/sinhnhat2.jpg" alt="">
 
                         <!-- Video phát từ 0s khi toàn bộ giao diện đã xuất hiện xong -->
-                        <video id="birthdayVideo" src="./images/capcut1.mp4" poster="./images/sinhnhat2.jpg" muted playsinline webkit-playsinline preload="auto"></video>
+                        <video id="birthdayVideo" src="./images/capcut1.mp4" poster="./images/sinhnhat2.jpg" muted playsinline webkit-playsinline controlslist="nofullscreen noremoteplayback" disablepictureinpicture disableremoteplayback preload="auto"></video>
 
                         <!-- Slideshow ảnh: bắt đầu chiếu sau khi video kết thúc -->
                         <img class="slide" src="./images/sinhnhat2.jpg" alt="">
@@ -494,10 +494,43 @@
         let playPending = false;
         let slideshowStarted = false;
 
-        if (videoEl) {
+        function configureInlineVideo() {
+            if (!videoEl) return;
             videoEl.muted = true;
             videoEl.defaultMuted = true;
             videoEl.playsInline = true;
+            videoEl.controls = false;
+            videoEl.disablePictureInPicture = true;
+            videoEl.disableRemotePlayback = true;
+            videoEl.setAttribute('playsinline', '');
+            videoEl.setAttribute('webkit-playsinline', '');
+        }
+
+        function keepVideoInFrame(event) {
+            if (!videoEl) return;
+            if (videoEl.webkitPresentationMode && videoEl.webkitPresentationMode !== 'inline'
+                && typeof videoEl.webkitSetPresentationMode === 'function') {
+                try { videoEl.webkitSetPresentationMode('inline'); } catch {}
+            }
+            if (videoEl.webkitDisplayingFullscreen || event?.type === 'webkitbeginfullscreen') {
+                const exitFullscreen = videoEl.webkitExitFullscreen || videoEl.webkitExitFullScreen;
+                if (typeof exitFullscreen === 'function') {
+                    try { exitFullscreen.call(videoEl); } catch {}
+                }
+            }
+            if (document.fullscreenElement === videoEl || document.webkitFullscreenElement === videoEl) {
+                const exitFullscreen = document.exitFullscreen || document.webkitExitFullscreen;
+                if (typeof exitFullscreen === 'function') {
+                    try {
+                        const request = exitFullscreen.call(document);
+                        if (request && typeof request.catch === 'function') request.catch(function() {});
+                    } catch {}
+                }
+            }
+        }
+
+        if (videoEl) {
+            configureInlineVideo();
             videoEl.pause();
             videoEl.currentTime = 0;
             videoEl.classList.remove('playing');
@@ -554,13 +587,12 @@
 
         function onVideoPlaying() {
             if (!introReady) {
-                // Prepare playback in the existing name-confirmation gesture.
-                // Keep the first photo visible until the entrance effects finish.
                 videoEl.pause();
                 videoEl.currentTime = 0;
                 return;
             }
             if (videoFinished) return;
+            keepVideoInFrame();
             videoEl.classList.add('playing');
             if (waitingText) {
                 waitingText.classList.remove('hide');
@@ -571,7 +603,7 @@
         function tryPlayVideo() {
             if (!videoEl || videoFinished || playPending) return;
             playPending = true;
-            videoEl.muted = true;
+            configureInlineVideo();
             try {
                 if (videoEl.error) videoEl.load();
                 const request = videoEl.play();
@@ -612,9 +644,8 @@
             if (introScheduled || !content || window.getComputedStyle(content).display === 'none') return;
             introScheduled = true;
 
-            // Use the existing confirmation tap to prepare muted inline video on iPhone.
-            // This never displays the video before the entrance effects are complete.
-            tryPlayVideo();
+            // The circle must finish its entrance before any video playback begins.
+            configureInlineVideo();
 
             if (wrapper && typeof wrapper.getAnimations === 'function') {
                 const entranceAnimations = wrapper.getAnimations({ subtree: true }).filter(function(animation) {
@@ -633,6 +664,10 @@
 
         if (videoEl) {
             videoEl.addEventListener('playing', onVideoPlaying);
+            videoEl.addEventListener('webkitbeginfullscreen', keepVideoInFrame);
+            videoEl.addEventListener('webkitpresentationmodechanged', keepVideoInFrame);
+            document.addEventListener('fullscreenchange', keepVideoInFrame);
+            document.addEventListener('webkitfullscreenchange', keepVideoInFrame);
             videoEl.addEventListener('ended', finishVideo);
             videoEl.addEventListener('loadeddata', resumeVideo);
             videoEl.addEventListener('canplay', resumeVideo);
