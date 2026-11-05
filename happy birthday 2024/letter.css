@@ -1,0 +1,268 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500&family=Playfair+Display:ital,wght@0,400;0,500;1,400&display=swap');
+
+body.letter-open { overflow: hidden; }
+
+.box__letter {
+    --letter-ink: #4a3543;
+    --letter-gold: #9b7a43;
+    --letter-rule: #d8c7a5;
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: none;
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
+    padding: 28px 18px;
+    background: rgba(42, 27, 38, .60);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+}
+.box__letter.is-open { display: grid; place-items: center; }
+.box__letter[hidden] { display: none; }
+
+.box__letter .letter__border {
+    position: relative;
+    inset: auto;
+    transform: none;
+    display: block;
+    width: min(100%, 600px);
+    height: auto;
+    max-height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #c797ab #fff0f4;
+    padding: 11px;
+    border: 1px solid #dbc79e;
+    border-radius: 5px;
+    background: #f0d5df;
+    box-shadow: 0 32px 100px rgba(12, 17, 22, .33), 0 6px 20px rgba(12, 17, 22, .12);
+}
+.box__letter.is-open .letter__border {
+    animation: letter-arrive .55s cubic-bezier(.2, .75, .3, 1) both;
+}
+.box__letter .letter__close {
+    position: absolute;
+    top: 23px;
+    right: 23px;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid #e2c3cd;
+    border-radius: 50%;
+    background: #fff1f6;
+    color: #8c6374;
+    font: 400 23px/1 Arial, sans-serif;
+    cursor: pointer;
+    transition: color .2s, background .2s, border-color .2s;
+}
+.box__letter .letter__close:hover {
+    color: var(--letter-ink);
+    border-color: #b89b65;
+    background: #f4dce6;
+}
+.box__letter .letter__close:focus-visible {
+    outline: 2px solid #8e6d38;
+    outline-offset: 3px;
+}
+.box__letter .letter {
+    position: relative;
+    isolation: isolate;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    border: 1px solid #bea36f;
+    border-radius: 1px;
+    padding: 32px 44px 26px;
+    color: var(--letter-ink);
+    background-color: #fff0f4;
+    background-image: radial-gradient(rgba(158, 89, 112, .10) .45px, transparent .6px), linear-gradient(115deg, #fff5f8, #f8e1e9);
+    background-size: 7px 7px, 100% 100%;
+    font-family: 'Be Vietnam Pro', Arial, sans-serif;
+}
+.box__letter .letter::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: 6px;
+    border: 1px solid rgba(190, 163, 111, .28);
+    pointer-events: none;
+}
+.box__letter .letter__meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    min-height: 18px;
+    padding-right: 40px;
+    color: #7c6c50;
+    font-size: 9px;
+    line-height: 1.6;
+    letter-spacing: 1.8px;
+}
+.box__letter .letter__date {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 2px;
+}
+.box__letter .letter__celebration {
+    position: relative;
+    padding: 20px 12px 0;
+    text-align: center;
+}
+.box__letter .letter__ornaments {
+    position: absolute;
+    inset: 7px 0 auto;
+    width: 100%;
+    height: 155px;
+    color: #ad8a4d;
+    opacity: .75;
+    pointer-events: none;
+}
+.box__letter .letter__occasion {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 400;
+}
+.box__letter .letter__occasion span {
+    color: var(--letter-gold);
+    font-size: 37px;
+    font-style: italic;
+    line-height: 1.2;
+}
+.box__letter .letter__occasion strong {
+    color: var(--letter-ink);
+    font-size: clamp(42px, 7vw, 62px);
+    font-weight: 400;
+    line-height: 1.18;
+    letter-spacing: -1.8px;
+}
+.box__letter .letter__occasion-note {
+    position: relative;
+    margin-top: 17px;
+    color: #897755;
+    font-size: 8px;
+    line-height: 1.7;
+    letter-spacing: 2.5px;
+}
+.box__letter .letter__divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 13px;
+    margin: 27px 0 24px;
+}
+.box__letter .letter__divider::before,
+.box__letter .letter__divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--letter-rule));
+}
+.box__letter .letter__divider::after { transform: scaleX(-1); }
+.box__letter .letter__divider span {
+    width: 6px;
+    height: 6px;
+    transform: rotate(45deg);
+    border: 1px solid #af8b4d;
+}
+.box__letter .letter .title__letter {
+    margin: 0 0 16px;
+    color: var(--letter-ink);
+    text-align: left;
+    font: italic 400 29px/1.4 'Playfair Display', Georgia, 'Times New Roman', serif;
+    letter-spacing: -.5px;
+    overflow-wrap: anywhere;
+}
+.box__letter .letter .text__letter {
+    margin: 0;
+    padding: 0;
+    color: #5d4853;
+    font: 400 15px/1.95 'Be Vietnam Pro', Arial, sans-serif;
+    overflow-wrap: anywhere;
+}
+.box__letter .letter__word {
+    opacity: 0;
+    transition: opacity .18s ease;
+}
+.box__letter .letter__word.is-written { opacity: 1; }
+.box__letter .letter__footer {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 23px;
+    color: var(--letter-gold);
+}
+.box__letter .letter__cake {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+}
+.box__letter .letter__cake::before,
+.box__letter .letter__cake::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 37px;
+    height: 1px;
+    background: #ddcfb2;
+}
+.box__letter .letter__cake::before { right: calc(100% + 15px); }
+.box__letter .letter__cake::after { left: calc(100% + 15px); }
+.box__letter .letter__cake svg { width: 48px; height: 48px; }
+.box__letter .letter__footer p {
+    margin-top: 5px;
+    color: #897755;
+    font-size: 8px;
+    line-height: 1.7;
+    letter-spacing: 3px;
+}
+
+@keyframes letter-arrive {
+    from { opacity: 0; transform: translateY(22px) scale(.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (max-width: 480px) {
+    .box__letter { padding: 18px 12px; }
+    .box__letter .letter__border { padding: 8px; }
+    .box__letter .letter { padding: 25px 25px 23px; }
+    .box__letter .letter__close { top: 17px; right: 17px; }
+    .box__letter .letter__meta { min-height: 20px; padding-right: 38px; font-size: 8px; letter-spacing: 1px; gap: 5px 12px; }
+    .box__letter .letter__celebration { padding: 22px 0 0; }
+    .box__letter .letter__ornaments { inset-block-start: 12px; height: 132px; }
+    .box__letter .letter__occasion span { font-size: 30px; }
+    .box__letter .letter__occasion strong { font-size: 47px; letter-spacing: -1.3px; }
+    .box__letter .letter__occasion-note { font-size: 7px; letter-spacing: 1.8px; margin-top: 14px; }
+    .box__letter .letter__divider { margin: 24px 0 20px; }
+    .box__letter .letter .title__letter { font-size: 26px; margin-bottom: 12px; }
+    .box__letter .letter .text__letter { font-size: 14px; line-height: 1.95; }
+    .box__letter .letter__footer { margin-top: 18px; }
+}
+@media (max-width: 350px) {
+    .box__letter .letter { padding-inline: 21px; }
+    .box__letter .letter__occasion strong { font-size: 41px; }
+    .box__letter .letter__meta { flex-direction: column; align-items: flex-start; gap: 3px; }
+}
+@media (max-height: 650px) {
+    .box__letter { padding-block: 12px; }
+    .box__letter .letter__celebration { padding-top: 15px; }
+    .box__letter .letter__occasion span { font-size: 28px; }
+    .box__letter .letter__occasion strong { font-size: 44px; }
+    .box__letter .letter__occasion-note { margin-top: 10px; }
+    .box__letter .letter__divider { margin-block: 19px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .box__letter.is-open .letter__border { animation: none; }
+    .box__letter .letter__close { transition: none; }
+    .box__letter .letter__word { transition: none; }
+}

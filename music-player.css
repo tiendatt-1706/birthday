@@ -1,0 +1,38 @@
+#music-listen {
+    position: fixed;
+    display: inline-flex;
+    align-items: center;
+    left: 14px;
+    left: max(14px, env(safe-area-inset-left, 0px));
+    bottom: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    z-index: 2147483647;
+    max-width: calc(100vw - 28px);
+    min-height: 44px;
+    padding: 10px 14px;
+    border: 1px solid #eab8cd;
+    border-radius: 24px;
+    background: #fff4f9;
+    color: #92415e;
+    box-shadow: 0 3px 12px rgba(133, 51, 85, .12);
+    font: 500 12px/1.5 Arial, sans-serif;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+#music-listen:hover {
+    background: #ffe6f0;
+}
+
+#music-listen:focus-visible {
+    outline: 2px solid #92415e;
+    outline-offset: 3px;
+}
+
+@media (max-width: 480px) {
+    #music-listen {
+        bottom: 300px;
+        bottom: calc(300px + env(safe-area-inset-bottom, 0px));
+    }
+}
